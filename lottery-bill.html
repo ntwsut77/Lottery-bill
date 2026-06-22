@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>บิลลอตเตอรี่</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                colors: { g: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534' } }
+            }}
+        }
+    </script>
+    <style>
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        body{font-family:'Prompt',sans-serif;background:#f0fdf4;min-height:100vh;}
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+        input[type=number]{-moz-appearance:textfield;}
+
+        .field{border:1.5px solid #bbf7d0;border-radius:8px;padding:6px 8px;outline:none;background:#fff;font-family:'Prompt',sans-serif;font-size:16px;transition:border-color .2s;}
+        .field:focus{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.12);}
+
+        .type-select{border:1.5px solid #bbf7d0;border-radius:8px;padding:6px 26px 6px 8px;outline:none;
+            background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2316a34a' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 6px center;
+            -webkit-appearance:none;appearance:none;font-family:'Prompt',sans-serif;font-weight:700;color:#15803d;font-size:14px;cursor:pointer;}
+        .custom-name-input{border:none;border-bottom:1.5px solid #bbf7d0;outline:none;background:transparent;font-family:'Prompt',sans-serif;font-weight:600;color:#15803d;font-size:14px;padding:4px 4px;min-width:80px;}
+        .custom-name-input:focus{border-bottom-color:#16a34a;}
+
+        .tab{padding:8px 14px;border-radius:10px 10px 0 0;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+        .tab.active{background:#fff;color:#15803d;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
+        .tab.inactive{background:#dcfce7;color:#166534;}
+
+        .group-card{background:#fff;border:1.5px solid #dcfce7;border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+        .group-head{background:linear-gradient(90deg,#f0fdf4,#fff);padding:8px 12px;border-bottom:1.5px solid #dcfce7;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+
+        /* ── SWIPE ROWS ── */
+        .swipe-container{position:relative;overflow:hidden;}
+        .swipe-reveal-left{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;background:#ef4444;color:#fff;padding:0 16px;font-size:13px;font-weight:600;gap:4px;z-index:1;}
+        .swipe-reveal-right{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;background:#16a34a;color:#fff;padding:0 16px;font-size:13px;font-weight:600;gap:4px;z-index:1;}
+        .swipe-inner{position:relative;z-index:2;background:#fff;transition:transform .2s ease;will-change:transform;}
+        .swipe-container:hover .swipe-inner{background:#f0fdf4;}
+
+        /* ── GROUP SWIPE ── */
+        .group-swipe-container{position:relative;overflow:hidden;border-radius:14px;margin-bottom:14px;}
+        .group-swipe-reveal-left{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;background:#ef4444;color:#fff;padding:0 18px;font-size:13px;font-weight:600;gap:4px;z-index:1;border-radius:0 14px 14px 0;}
+        .group-swipe-reveal-right{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;background:#3b82f6;color:#fff;padding:0 18px;font-size:13px;font-weight:600;gap:4px;z-index:1;border-radius:14px 0 0 14px;}
+        .group-swipe-inner{position:relative;z-index:2;transition:transform .2s ease;will-change:transform;}
+
+        .grand-total-box{background:linear-gradient(135deg,#15803d,#166534);color:#fff;border-radius:14px;padding:14px 20px;}
+
+        /* img modal */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:9000;}
+        .modal-bg.open{display:flex;}
+        .modal-sheet{background:#fff;border-radius:20px 20px 0 0;padding:18px 18px 32px;width:100%;max-width:480px;box-shadow:0 -4px 30px rgba(0,0,0,.15);}
+        .modal-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;}
+
+        #capture-area{position:fixed;left:-9999px;top:0;width:600px;background:#fff;font-family:'Prompt',sans-serif;}
+
+        .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:12px;font-size:.85rem;font-weight:500;color:#fff;white-space:nowrap;animation:slideUp .25s ease;pointer-events:none;}
+        @keyframes slideUp{from{transform:translateX(-50%) translateY(14px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
+        .spinner{width:30px;height:30px;border:3px solid #dcfce7;border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+    </style>
+</head>
+<body id="body">
+
+<!-- TOP BAR -->
+<div class="sticky top-0 z-50 bg-white border-b border-g-200 shadow-sm px-3 py-2.5 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-g-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="ph-fill ph-ticket text-white text-lg"></i>
+        </div>
+        <span class="font-bold text-base text-gray-800">บิลลอตเตอรี่</span>
+    </div>
+    <!-- 2 action buttons -->
+    <div class="flex items-center gap-2">
+        <button onclick="doCopy()" class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 active:bg-amber-100 px-3 py-2 rounded-xl text-sm font-semibold transition-all">
+            <i class="ph ph-copy text-base"></i> คัดลอก
+        </button>
+        <button onclick="doCapture()" class="flex items-center gap-1.5 bg-g-600 hover:bg-g-700 active:bg-g-800 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm">
+            <i class="ph ph-image text-base"></i> บันทึกรูป
+        </button>
+    </div>
+</div>
+
+<!-- TABS -->
+<div class="px-3 pt-3 overflow-x-auto">
+    <div class="flex items-end gap-1 min-w-max" id="tabs-row"></div>
+</div>
+
+<!-- BILL AREA -->
+<div class="max-w-xl mx-auto px-3 py-3">
+    <div class="bg-white rounded-2xl shadow-sm border border-g-100 p-4">
+
+        <!-- Customer -->
+        <div class="mb-4 pb-4 border-b border-g-100">
+            <div class="text-[10px] font-semibold text-g-600 uppercase tracking-widest mb-1">ชื่อลูกค้า</div>
+            <input id="cus-name-input" type="text" placeholder="ระบุชื่อลูกค้า..." oninput="updateCusName(this.value)"
+                class="w-full outline-none font-semibold text-gray-800 bg-transparent border-b-2 border-g-100 focus:border-g-500 pb-1 transition-colors"
+                style="font-size:18px;">
+        </div>
+
+        <!-- Table header -->
+        <div class="flex items-center gap-1 px-2 py-1.5 bg-g-50 rounded-lg text-[10px] font-semibold text-g-700 uppercase tracking-wider mb-2">
+            <div class="w-5 text-center">#</div>
+            <div class="flex-1">เลข</div>
+            <div class="w-12 text-center">จำนวน</div>
+            <div class="w-14 text-center">ราคา</div>
+            <div class="w-14 text-right pr-1">รวม</div>
+            <div class="w-6"></div>
+        </div>
+
+        <!-- Groups -->
+        <div id="groups-container"></div>
+
+        <!-- Add group -->
+        <button onclick="addGroup()" class="mt-1 w-full flex items-center justify-center gap-2 border-2 border-dashed border-g-200 text-g-600 active:bg-g-50 rounded-xl py-2.5 text-sm font-medium">
+            <i class="ph ph-folder-plus"></i> เพิ่มกลุ่ม
+        </button>
+
+        <!-- Grand total -->
+        <div class="mt-4">
+            <div class="grand-total-box flex items-center justify-between">
+                <span class="text-sm font-medium opacity-90">ยอดรวมสุทธิ</span>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-3xl font-extrabold" id="grand-total">0</span>
+                    <span class="text-xs opacity-80">บาท</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- hint -->
+    <p class="text-center text-xs text-gray-400 mt-3">← swipe ซ้ายลบแถว &nbsp;|&nbsp; swipe ขวาเพิ่มแถว →</p>
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="modal-bg" id="img-modal" onclick="closeImgModal(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="ph ph-image text-g-600 text-lg"></i> ภาพบิล</div>
+        <div id="img-loading" class="py-8 text-center"><div class="spinner mb-3"></div><div class="text-xs text-gray-400">กำลังสร้างภาพ...</div></div>
+        <div id="img-result" class="hidden">
+            <img id="bill-img" class="w-full rounded-xl border border-g-100 mb-3">
+            <p class="text-xs text-gray-400 text-center mb-3">iOS: กดค้างที่รูป → บันทึกภาพ</p>
+            <button onclick="downloadImg()" class="w-full bg-g-600 active:bg-g-800 text-white py-3 rounded-xl font-bold text-sm">
+                <i class="ph ph-download-simple mr-1"></i> ดาวน์โหลด
+            </button>
+        </div>
+        <button onclick="document.getElementById('img-modal').classList.remove('open')" class="mt-3 w-full bg-gray-100 py-2.5 rounded-xl text-sm font-medium text-gray-500">ปิด</button>
+    </div>
+</div>
+
+<!-- hidden capture zone -->
+<div id="capture-area"></div>
+
+<script>
+const STORE_KEY='lottery_v5';
+const GROUP_TYPES=['หวยแถว','5 ใบ','10 ใบ','พิมพ์เอง'];
+let state={activeId:null,customers:[]};
+let capturedDataUrl=null;
+
+// ─── init ───
+function init(){
+    try{const s=localStorage.getItem(STORE_KEY);if(s)state=JSON.parse(s);}catch(e){}
+    if(!state.customers||!state.customers.length) addCustomer('ลูกค้า 1');
+    else{
+        if(!state.customers.find(c=>c.id===state.activeId)) state.activeId=state.customers[0].id;
+        renderAll();
+    }
+}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state));}catch(e){}}
+const uid=()=>'_'+Math.random().toString(36).slice(2,9);
+const fmt=n=>Number(n).toLocaleString('th-TH');
+const newItem=()=>({id:uid(),number:'',qty:1,price:'',total:0});
+const newGroup=(name='หวยแถว')=>({id:uid(),name,customName:'',items:[newItem()]});
+const active=()=>state.customers.find(c=>c.id===state.activeId);
+
+// ─── customers ───
+function addCustomer(name){
+    const c={id:uid(),name:name||`ลูกค้า ${state.customers.length+1}`,groups:[newGroup()]};
+    state.customers.push(c);state.activeId=c.id;save();renderAll();
+}
+function removeCustomer(id,e){
+    e.stopPropagation();
+    if(state.customers.length<=1)return toast('ต้องมีอย่างน้อย 1 คน');
+    if(!confirm('ลบลูกค้านี้?'))return;
+    state.customers=state.customers.filter(c=>c.id!==id);
+    if(state.activeId===id)state.activeId=state.customers.at(-1).id;
+    save();renderAll();
+}
+function switchTab(id){state.activeId=id;save();renderAll();}
+function updateCusName(val){
+    const c=active();if(!c)return;c.name=val;
+    const sp=document.getElementById('tab-'+c.id);if(sp)sp.innerText=val||'(ไม่มีชื่อ)';
+    save();
+}
+
+// ─── groups ───
+function addGroup(){
+    const c=active();if(!c)return;
+    c.groups.push(newGroup());save();renderGroups();
+    setTimeout(()=>window.scrollTo({top:9999,behavior:'smooth'}),80);
+}
+function removeGroup(gid){
+    const c=active();if(!c)return;
+    c.groups=c.groups.filter(g=>g.id!==gid);save();renderGroups();
+}
+function updateGroupType(gid,val){
+    const c=active();if(!c)return;
+    const g=c.groups.find(g=>g.id===gid);if(!g)return;
+    g.name=val;if(val!=='พิมพ์เอง')g.customName='';
+    save();renderGroups();
+}
+function updateGroupCustomName(gid,val){
+    const c=active();if(!c)return;
+    const g=c.groups.find(g=>g.id===gid);if(!g)return;
+    g.customName=val;save();
+}
+
+// ─── items ───
+function addItem(gid){
+    const c=active();if(!c)return;
+    const g=c.groups.find(g=>g.id===gid);if(!g)return;
+    g.items.push(newItem());save();renderGroups();
+}
+function removeItem(gid,iid){
+    const c=active();if(!c)return;
+    const g=c.groups.find(g=>g.id===gid);if(!g)return;
+    g.items=g.items.filter(i=>i.id!==iid);save();renderGroups();
+}
+function updateItem(gid,iid,field,val){
+    const c=active();if(!c)return;
+    const g=c.groups.find(g=>g.id===gid);if(!g)return;
+    const item=g.items.find(i=>i.id===iid);if(!item)return;
+    if(field==='qty')item.qty=val===''?'':(parseInt(val)||1);
+    else if(field==='price')item.price=val===''?'':(parseFloat(val)||0);
+    else item[field]=val;
+    item.total=(parseFloat(item.price)||0)*(parseInt(item.qty)||0);
+    const el=document.getElementById('tot-'+item.id);if(el)el.innerText=fmt(item.total);
+    refreshTotals(gid);save();
+}
+
+// ─── render ───
+function renderAll(){renderTabs();renderGroups();}
+
+function renderTabs(){
+    const row=document.getElementById('tabs-row');
+    let h='';
+    state.customers.forEach(c=>{
+        const act=c.id===state.activeId;
+        h+=`<div class="tab ${act?'active':'inactive'}" onclick="switchTab('${c.id}')">
+            <span class="max-w-[90px] truncate" id="tab-${c.id}">${c.name||'(ไม่มีชื่อ)'}</span>
+            ${state.customers.length>1?`<button onclick="removeCustomer('${c.id}',event)" class="opacity-40 hover:opacity-100 hover:text-red-500"><i class="ph ph-x text-xs"></i></button>`:''}
+        </div>`;
+    });
+    h+=`<button onclick="addCustomer()" class="tab inactive px-3"><i class="ph ph-plus font-bold"></i></button>`;
+    row.innerHTML=h;
+    const cus=active();
+    if(cus)document.getElementById('cus-name-input').value=cus.name||'';
+}
+
+function renderGroups(){
+    const container=document.getElementById('groups-container');
+    const cus=active();if(!cus)return;
+    if(!cus.groups)cus.groups=[];
+    let h='';
+    cus.groups.forEach((g,gi)=>{
+        const dname=g.name==='พิมพ์เอง'?(g.customName||'อื่นๆ'):g.name;
+        let rows='';
+        g.items.forEach((item,ii)=>{
+            rows+=`
+            <div class="swipe-container" id="sw-${item.id}">
+                <div class="swipe-reveal-right"><i class="ph ph-plus-circle"></i> เพิ่มแถว</div>
+                <div class="swipe-reveal-left"><i class="ph ph-trash"></i> ลบ</div>
+                <div class="swipe-inner flex items-center gap-1 px-2 py-2">
+                    <div class="w-5 text-center text-xs text-gray-400 font-bold">${ii+1}</div>
+                    <div class="flex-1">
+                        <input type="text" value="${item.number}" placeholder="เลข" inputmode="numeric"
+                            oninput="updateItem('${g.id}','${item.id}','number',this.value)"
+                            class="field w-full text-center font-semibold tracking-wider" style="font-size:16px;">
+                    </div>
+                    <div class="w-12">
+                        <input type="number" value="${item.qty}" min="1" inputmode="numeric"
+                            oninput="updateItem('${g.id}','${item.id}','qty',this.value)"
+                            class="field w-full text-center" style="font-size:16px;">
+                    </div>
+                    <div class="w-14">
+                        <input type="number" value="${item.price}" min="0" placeholder="0" inputmode="decimal"
+                            oninput="updateItem('${g.id}','${item.id}','price',this.value)"
+                            class="field w-full text-center bg-g-50" style="font-size:16px;">
+                    </div>
+                    <div class="w-14 text-right pr-1 font-bold text-sm text-gray-900" id="tot-${item.id}">${fmt(item.total)}</div>
+                    <button ontouchstart="" onclick="removeItem('${g.id}','${item.id}')" class="w-6 text-center text-gray-300 active:text-red-400">
+                        <i class="ph ph-x-circle"></i>
+                    </button>
+                </div>
+            </div>`;
+        });
+
+        // Group head — also swipeable (right=add group, left=delete group)
+        h+=`
+        <div class="group-swipe-container" id="gsw-${g.id}">
+            <div class="group-swipe-reveal-right"><i class="ph ph-folder-plus"></i> เพิ่มกลุ่ม</div>
+            <div class="group-swipe-reveal-left"><i class="ph ph-trash"></i> ลบกลุ่ม</div>
+            <div class="group-swipe-inner group-card" style="margin-bottom:0;">
+                <div class="group-head">
+                    <select onchange="updateGroupType('${g.id}',this.value)" class="type-select">
+                        ${GROUP_TYPES.map(t=>`<option value="${t}" ${g.name===t?'selected':''}>${t}</option>`).join('')}
+                    </select>
+                    ${g.name==='พิมพ์เอง'?`<input type="text" value="${g.customName||''}" placeholder="ชื่อกลุ่ม..." oninput="updateGroupCustomName('${g.id}',this.value)" class="custom-name-input" style="font-size:16px;">`:''}
+                    <button onclick="removeGroup('${g.id}')" class="text-gray-300 active:text-red-400 ml-auto p-1">
+                        <i class="ph ph-trash text-sm"></i>
+                    </button>
+                </div>
+                <div>${rows}</div>
+                <div class="flex items-center justify-between px-3 py-2 bg-g-50/60 border-t border-g-100">
+                    <button ontouchstart="" onclick="addItem('${g.id}')" class="flex items-center gap-1 text-g-600 active:text-g-800 text-sm font-medium py-1">
+                        <i class="ph ph-plus-circle"></i> เพิ่มแถว
+                    </button>
+                    <div class="text-xs text-gray-500">กลุ่มนี้: <span class="font-bold text-gray-800" id="gtot-${g.id}">0</span> ฿</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    container.innerHTML=h;
+    refreshAllTotals();
+    attachSwipeHandlers();
+}
+
+// ─── totals ───
+function refreshTotals(gid){
+    const cus=active();if(!cus)return;
+    const g=cus.groups.find(g=>g.id===gid);if(!g)return;
+    const sum=g.items.reduce((a,i)=>a+(parseFloat(i.total)||0),0);
+    const el=document.getElementById('gtot-'+gid);if(el)el.innerText=fmt(sum);
+    refreshGrandTotal();
+}
+function refreshAllTotals(){const cus=active();if(!cus)return;cus.groups.forEach(g=>refreshTotals(g.id));}
+function refreshGrandTotal(){
+    const cus=active();if(!cus)return;
+    const total=cus.groups.reduce((a,g)=>a+g.items.reduce((b,i)=>b+(parseFloat(i.total)||0),0),0);
+    document.getElementById('grand-total').innerText=fmt(total);
+}
+
+// ─── SWIPE HANDLERS ───
+function attachSwipeHandlers(){
+    // Item rows
+    document.querySelectorAll('.swipe-container').forEach(container=>{
+        const inner=container.querySelector('.swipe-inner');
+        const itemId=container.id.replace('sw-','');
+        attachSwipe(container,inner,{
+            threshold:60,
+            onSwipeLeft:()=>{
+                // find group
+                const cus=active();if(!cus)return;
+                let foundGid=null;
+                for(const g of cus.groups){
+                    if(g.items.find(i=>i.id===itemId)){foundGid=g.id;break;}
+                }
+                if(foundGid) removeItem(foundGid,itemId);
+            },
+            onSwipeRight:()=>{
+                const cus=active();if(!cus)return;
+                let foundGid=null;
+                for(const g of cus.groups){
+                    if(g.items.find(i=>i.id===itemId)){foundGid=g.id;break;}
+                }
+                if(foundGid) addItem(foundGid);
+            }
+        });
+    });
+
+    // Group cards
+    document.querySelectorAll('.group-swipe-container').forEach(container=>{
+        const inner=container.querySelector('.group-swipe-inner');
+        const gid=container.id.replace('gsw-','');
+        attachSwipe(container,inner,{
+            threshold:70,
+            onSwipeLeft:()=>removeGroup(gid),
+            onSwipeRight:()=>addGroup()
+        });
+    });
+}
+
+function attachSwipe(container,inner,{threshold,onSwipeLeft,onSwipeRight}){
+    let startX=0,startY=0,isDragging=false,dx=0;
+    const REVEAL=80;
+
+    function onStart(e){
+        const t=e.touches?e.touches[0]:e;
+        startX=t.clientX;startY=t.clientY;
+        isDragging=true;dx=0;
+        inner.style.transition='none';
+    }
+    function onMove(e){
+        if(!isDragging)return;
+        const t=e.touches?e.touches[0]:e;
+        dx=t.clientX-startX;
+        const dy=t.clientY-startY;
+        // cancel if more vertical
+        if(Math.abs(dy)>Math.abs(dx)*1.2){isDragging=false;resetInner();return;}
+        if(e.cancelable)e.preventDefault();
+        const clamped=Math.max(-REVEAL,Math.min(REVEAL,dx));
+        inner.style.transform=`translateX(${clamped}px)`;
+    }
+    function onEnd(){
+        if(!isDragging)return;
+        isDragging=false;
+        inner.style.transition='transform .2s ease';
+        if(dx<-threshold){
+            inner.style.transform=`translateX(-${REVEAL}px)`;
+            setTimeout(()=>{resetInner();onSwipeLeft();},180);
+        } else if(dx>threshold){
+            inner.style.transform=`translateX(${REVEAL}px)`;
+            setTimeout(()=>{resetInner();onSwipeRight();},180);
+        } else {
+            resetInner();
+        }
+    }
+    function resetInner(){inner.style.transform='translateX(0)';}
+
+    container.addEventListener('touchstart',onStart,{passive:true});
+    container.addEventListener('touchmove',onMove,{passive:false});
+    container.addEventListener('touchend',onEnd);
+}
+
+// ─── copy text ───
+function buildTextBill(){
+    const cus=active();if(!cus)return'';
+    const line='─'.repeat(28);
+    const date=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+    let t=`🎟️ บิลลอตเตอรี่\n👤 ${cus.name||'ไม่ระบุชื่อ'}\n📅 ${date}\n${line}\n`;
+    cus.groups.forEach(g=>{
+        const dname=g.name==='พิมพ์เอง'?(g.customName||'อื่นๆ'):g.name;
+        t+=`▸ ${dname}\n`;
+        g.items.forEach((item,i)=>{
+            if(!item.number&&!item.price)return;
+            t+=`  ${i+1}. ${(item.number||'-').padEnd(8)} x${String(item.qty||1).padStart(2)} (${String(item.price||0).padStart(4)}฿) = ${fmt(item.total)}฿\n`;
+        });
+        const gsum=g.items.reduce((a,i)=>a+(parseFloat(i.total)||0),0);
+        t+=`    รวมกลุ่ม: ${fmt(gsum)} บาท\n\n`;
+    });
+    const grand=cus.groups.reduce((a,g)=>a+g.items.reduce((b,i)=>b+(parseFloat(i.total)||0),0),0);
+    t+=`${line}\n💰 ยอดรวมสุทธิ: ${fmt(grand)} บาท\n🍀 ขอให้โชคดีครับ/ค่ะ`;
+    return t;
+}
+
+function doCopy(){
+    const txt=buildTextBill();
+    const doIt=()=>{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+            navigator.clipboard.writeText(txt).then(()=>toast('คัดลอกแล้ว ✓','#d97706')).catch(()=>fallbackCopy(txt));
+        } else fallbackCopy(txt);
+    };
+    doIt();
+}
+function fallbackCopy(txt){
+    const ta=document.createElement('textarea');
+    ta.value=txt;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');toast('คัดลอกแล้ว ✓','#d97706');}
+    catch(e){toast('ไม่สามารถคัดลอกได้');}
+    document.body.removeChild(ta);
+}
+
+// ─── capture image ───
+function doCapture(){
+    const modal=document.getElementById('img-modal');
+    modal.classList.add('open');
+    document.getElementById('img-loading').classList.remove('hidden');
+    document.getElementById('img-result').classList.add('hidden');
+    capturedDataUrl=null;
+
+    const cus=active();
+    const date=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+    const grand=cus.groups.reduce((a,g)=>a+g.items.reduce((b,i)=>b+(parseFloat(i.total)||0),0),0);
+
+    let groupsHtml='';
+    cus.groups.forEach(g=>{
+        const dname=g.name==='พิมพ์เอง'?(g.customName||'อื่นๆ'):g.name;
+        let rows='';
+        g.items.forEach((item,ii)=>{
+            rows+=`<div style="display:flex;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid #f0fdf4;">
+                <div style="width:20px;color:#9ca3af;font-size:12px;text-align:right;">${ii+1}.</div>
+                <div style="flex:1;font-weight:700;font-size:18px;letter-spacing:.08em;text-align:center;">${item.number||'-'}</div>
+                <div style="width:36px;font-size:13px;color:#4b5563;text-align:center;">${item.qty||1}</div>
+                <div style="width:46px;font-size:13px;color:#4b5563;text-align:center;">${item.price||0}</div>
+                <div style="width:56px;font-weight:700;font-size:14px;text-align:right;">${fmt(item.total)}</div>
+            </div>`;
+        });
+        const gsum=g.items.reduce((a,i)=>a+(parseFloat(i.total)||0),0);
+        groupsHtml+=`<div style="margin-bottom:12px;background:#fff;border:1.5px solid #dcfce7;border-radius:12px;overflow:hidden;">
+            <div style="background:#f0fdf4;padding:8px 12px;font-weight:700;color:#15803d;border-bottom:1.5px solid #dcfce7;font-size:14px;">${dname}</div>
+            <div style="padding:2px 8px;">${rows}</div>
+            <div style="padding:5px 12px;background:#f9fafb;border-top:1px solid #f0fdf4;font-size:11px;color:#6b7280;text-align:right;">รวมกลุ่ม <strong style="color:#111;">${fmt(gsum)}</strong> บาท</div>
+        </div>`;
+    });
+
+    document.getElementById('capture-area').innerHTML=`<div style="font-family:'Prompt',sans-serif;background:#fff;padding:24px 20px;width:600px;">
+        <div style="text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:2px dashed #dcfce7;">
+            <div style="font-size:20px;font-weight:800;color:#15803d;letter-spacing:.08em;">🎟️ ใบเสร็จลอตเตอรี่</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:3px;">${date}</div>
+        </div>
+        <div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid #f0fdf4;">
+            <div style="font-size:10px;font-weight:600;color:#16a34a;letter-spacing:.1em;margin-bottom:2px;">ชื่อลูกค้า</div>
+            <div style="font-size:18px;font-weight:700;">${cus.name||'ไม่ระบุชื่อ'}</div>
+        </div>
+        ${groupsHtml}
+        <div style="background:linear-gradient(135deg,#15803d,#166534);color:#fff;border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:14px;opacity:.9;">ยอดรวมสุทธิ</span>
+            <span style="font-size:26px;font-weight:800;">${fmt(grand)} <span style="font-size:13px;opacity:.8;">บาท</span></span>
+        </div>
+        <div style="text-align:center;margin-top:12px;font-size:11px;color:#9ca3af;">🍀 ขอบคุณที่อุดหนุน ขอให้โชคดีครับ/ค่ะ</div>
+    </div>`;
+
+    setTimeout(()=>{
+        html2canvas(document.getElementById('capture-area'),{scale:2,useCORS:true,backgroundColor:'#fff',logging:false})
+        .then(canvas=>{
+            capturedDataUrl=canvas.toDataURL('image/png');
+            document.getElementById('bill-img').src=capturedDataUrl;
+            document.getElementById('img-loading').classList.add('hidden');
+            document.getElementById('img-result').classList.remove('hidden');
+            document.getElementById('capture-area').innerHTML='';
+        }).catch(()=>{
+            document.getElementById('capture-area').innerHTML='';
+            document.getElementById('img-modal').classList.remove('open');
+            toast('สร้างภาพไม่สำเร็จ ลอง คัดลอก แทน');
+        });
+    },300);
+}
+
+function downloadImg(){
+    if(!capturedDataUrl)return;
+    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    if(isIOS){
+        const w=window.open();
+        w.document.write(`<html><body style="margin:0;background:#000;"><img src="${capturedDataUrl}" style="max-width:100%;display:block;"><p style="color:#fff;text-align:center;font-family:sans-serif;padding:12px;font-size:14px;">กดค้างที่รูป → บันทึกภาพ</p></body></html>`);
+    } else {
+        const cus=active();
+        const name=(cus?.name||'bill').replace(/[^a-zA-Z0-9ก-๙]/g,'_').slice(0,20);
+        const a=document.createElement('a');
+        a.href=capturedDataUrl;a.download=`Lottery_${name}.png`;
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        toast('ดาวน์โหลดสำเร็จ ✓','#16a34a');
+    }
+}
+
+function closeImgModal(e){
+    if(e.target===document.getElementById('img-modal'))
+        document.getElementById('img-modal').classList.remove('open');
+}
+
+// ─── toast ───
+function toast(msg,color='#374151'){
+    const el=document.createElement('div');
+    el.className='toast';el.style.background=color;el.innerText=msg;
+    document.body.appendChild(el);
+    setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},2200);
+}
+
+window.onload=init;
+</script>
+</body>
+</html>
