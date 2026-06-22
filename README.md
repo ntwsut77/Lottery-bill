@@ -1,2 +1,2 @@
 # Lottery-bill
-ชิ้นส่วน1
+(https://ntwsut77.github.io/Lottery-bill/)
