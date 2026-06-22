@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -18,7 +19,7 @@
     </script>
     <style>
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-        body{font-family:'Prompt',sans-serif;background:#f0fdf4;min-height:100vh;}
+        body{font-family:'Prompt',sans-serif;background:#f0fdf4;min-height:100vh;scroll-behavior: smooth;}
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
         input[type=number]{-moz-appearance:textfield;}
@@ -45,12 +46,6 @@
         .swipe-reveal-right{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;background:#16a34a;color:#fff;padding:0 16px;font-size:13px;font-weight:600;gap:4px;z-index:1;}
         .swipe-inner{position:relative;z-index:2;background:#fff;transition:transform .2s ease;will-change:transform;}
         .swipe-container:hover .swipe-inner{background:#f0fdf4;}
-
-        /* ── GROUP SWIPE ── */
-        .group-swipe-container{position:relative;overflow:hidden;border-radius:14px;margin-bottom:14px;}
-        .group-swipe-reveal-left{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;background:#ef4444;color:#fff;padding:0 18px;font-size:13px;font-weight:600;gap:4px;z-index:1;border-radius:0 14px 14px 0;}
-        .group-swipe-reveal-right{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;background:#3b82f6;color:#fff;padding:0 18px;font-size:13px;font-weight:600;gap:4px;z-index:1;border-radius:14px 0 0 14px;}
-        .group-swipe-inner{position:relative;z-index:2;transition:transform .2s ease;will-change:transform;}
 
         .grand-total-box{background:linear-gradient(135deg,#15803d,#166534);color:#fff;border-radius:14px;padding:14px 20px;}
 
@@ -120,7 +115,7 @@
         <div id="groups-container"></div>
 
         <!-- Add group -->
-        <button onclick="addGroup()" class="mt-1 w-full flex items-center justify-center gap-2 border-2 border-dashed border-g-200 text-g-600 active:bg-g-50 rounded-xl py-2.5 text-sm font-medium">
+        <button id="add-group-btn" onclick="addGroup()" class="mt-1 w-full flex items-center justify-center gap-2 border-2 border-dashed border-g-200 text-g-600 active:bg-g-50 rounded-xl py-2.5 text-sm font-medium">
             <i class="ph ph-folder-plus"></i> เพิ่มกลุ่ม
         </button>
 
@@ -205,7 +200,11 @@ function updateCusName(val){
 function addGroup(){
     const c=active();if(!c)return;
     c.groups.push(newGroup());save();renderGroups();
-    setTimeout(()=>window.scrollTo({top:9999,behavior:'smooth'}),80);
+    // เลื่อนหน้าจอไปที่ปุ่ม "เพิ่มกลุ่ม" แทนการ Hardcode ระยะ
+    setTimeout(() => {
+        const btn = document.getElementById('add-group-btn');
+        if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
 }
 function removeGroup(gid){
     const c=active();if(!c)return;
@@ -303,28 +302,24 @@ function renderGroups(){
             </div>`;
         });
 
-        // Group head — also swipeable (right=add group, left=delete group)
+        // ลบ swipe-group ออก ให้เหลือแค่โครงสร้าง group ปกติ
         h+=`
-        <div class="group-swipe-container" id="gsw-${g.id}">
-            <div class="group-swipe-reveal-right"><i class="ph ph-folder-plus"></i> เพิ่มกลุ่ม</div>
-            <div class="group-swipe-reveal-left"><i class="ph ph-trash"></i> ลบกลุ่ม</div>
-            <div class="group-swipe-inner group-card" style="margin-bottom:0;">
-                <div class="group-head">
-                    <select onchange="updateGroupType('${g.id}',this.value)" class="type-select">
-                        ${GROUP_TYPES.map(t=>`<option value="${t}" ${g.name===t?'selected':''}>${t}</option>`).join('')}
-                    </select>
-                    ${g.name==='พิมพ์เอง'?`<input type="text" value="${g.customName||''}" placeholder="ชื่อกลุ่ม..." oninput="updateGroupCustomName('${g.id}',this.value)" class="custom-name-input" style="font-size:16px;">`:''}
-                    <button onclick="removeGroup('${g.id}')" class="text-gray-300 active:text-red-400 ml-auto p-1">
-                        <i class="ph ph-trash text-sm"></i>
-                    </button>
-                </div>
-                <div>${rows}</div>
-                <div class="flex items-center justify-between px-3 py-2 bg-g-50/60 border-t border-g-100">
-                    <button ontouchstart="" onclick="addItem('${g.id}')" class="flex items-center gap-1 text-g-600 active:text-g-800 text-sm font-medium py-1">
-                        <i class="ph ph-plus-circle"></i> เพิ่มแถว
-                    </button>
-                    <div class="text-xs text-gray-500">กลุ่มนี้: <span class="font-bold text-gray-800" id="gtot-${g.id}">0</span> ฿</div>
-                </div>
+        <div class="group-card mb-[14px]" id="gsw-${g.id}">
+            <div class="group-head">
+                <select onchange="updateGroupType('${g.id}',this.value)" class="type-select">
+                    ${GROUP_TYPES.map(t=>`<option value="${t}" ${g.name===t?'selected':''}>${t}</option>`).join('')}
+                </select>
+                ${g.name==='พิมพ์เอง'?`<input type="text" value="${g.customName||''}" placeholder="ชื่อกลุ่ม..." oninput="updateGroupCustomName('${g.id}',this.value)" class="custom-name-input" style="font-size:16px;">`:''}
+                <button onclick="removeGroup('${g.id}')" class="text-gray-300 active:text-red-400 ml-auto p-1">
+                    <i class="ph ph-trash text-sm"></i>
+                </button>
+            </div>
+            <div>${rows}</div>
+            <div class="flex items-center justify-between px-3 py-2 bg-g-50/60 border-t border-g-100">
+                <button ontouchstart="" onclick="addItem('${g.id}')" class="flex items-center gap-1 text-g-600 active:text-g-800 text-sm font-medium py-1">
+                    <i class="ph ph-plus-circle"></i> เพิ่มแถว
+                </button>
+                <div class="text-xs text-gray-500">กลุ่มนี้: <span class="font-bold text-gray-800" id="gtot-${g.id}">0</span> ฿</div>
             </div>
         </div>`;
     });
@@ -350,7 +345,7 @@ function refreshGrandTotal(){
 
 // ─── SWIPE HANDLERS ───
 function attachSwipeHandlers(){
-    // Item rows
+    // Item rows (เฉพาะแถวรายการเท่านั้น)
     document.querySelectorAll('.swipe-container').forEach(container=>{
         const inner=container.querySelector('.swipe-inner');
         const itemId=container.id.replace('sw-','');
@@ -375,6 +370,8 @@ function attachSwipeHandlers(){
             }
         });
     });
+    // โค้ดที่เกี่ยวกับ Group Swipe ถูกลบออกทั้งหมดแล้ว
+}
 
 function attachSwipe(container,inner,{threshold,onSwipeLeft,onSwipeRight}){
     let startX=0,startY=0,isDragging=false,dx=0;
@@ -556,3 +553,6 @@ window.onload=init;
 </script>
 </body>
 </html>
+
+
+```
